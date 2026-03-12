@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PicurBackend.Application.Interfaces;
 using PicurBackend.Application.Services;
 using PicurBackend.Domain.Interfaces;
 using PicurBackend.Infrastructure;
@@ -13,6 +14,13 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Add services to the container.
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IReadingRepository, ReadingRepository>();
+
+
+//Services
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<NotificationService>();
+
+
 builder.Services.AddScoped<OpenAIService>();
 
 builder.Services.AddControllers();

@@ -1,11 +1,12 @@
 ﻿using Microsoft.Extensions.Configuration;
 using OpenAI;
 using OpenAI.Chat;
+using PicurBackend.Application.Interfaces;
 using PicurBackend.Domain.Interfaces;
 
 namespace PicurBackend.Application.Services
 {
-    public class OpenAIService
+    public class OpenAIService : IOpenAIService
     {
         private readonly OpenAIClient _client;
         private readonly IReadingRepository _readingRepository;

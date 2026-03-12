@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PicurBackend.Application.Services;
+using PicurBackend.Application.Interfaces;
 using PicurBackend.Domain.Entities;
 using PicurBackend.Domain.Interfaces;
 
@@ -10,12 +10,12 @@ namespace PicurBackend.Api.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserRepository _userRepository;
-        private readonly OpenAIService _aiService;
+        private readonly IUserService _userService;
 
-        public UserController(IUserRepository userRepository, OpenAIService aiService)
+        public UserController(IUserRepository userRepository, IUserService userService)
         {
             _userRepository = userRepository;
-            _aiService = aiService;
+            _userService = userService;
         }
 
         [HttpGet]
@@ -39,7 +39,7 @@ namespace PicurBackend.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateUser(User user)
         {
-            var createdUser = await _userRepository.CreateAsync(user);
+            var createdUser = await _userService.CreateAsync(user);
 
             return CreatedAtAction(nameof(GetUser), new { id = createdUser.Id }, createdUser);
         }
@@ -48,6 +48,17 @@ namespace PicurBackend.Api.Controllers
         public async Task<IActionResult> UpdateUser(int id, User user)
         {
             var updatedUser = await _userRepository.UpdateAsync(id, user);
+
+            if (updatedUser == null)
+                return NotFound();
+
+            return Ok(updatedUser);
+        }
+
+        [HttpPut("/update-password/{password}")]
+        public async Task<IActionResult> UpdatePassword(int id, string password)
+        {
+            var updatedUser = await _userService.UpdatePassword(id, password);
 
             if (updatedUser == null)
                 return NotFound();
@@ -66,12 +77,7 @@ namespace PicurBackend.Api.Controllers
             return NoContent();
         }
 
-        [HttpPost("ask")]
-        public async Task<IActionResult> AskAI([FromBody] string prompt)
-        {
-            var result = await _aiService.AskAI(prompt);
 
-            return Ok(result);
-        }
+
     }
 }
