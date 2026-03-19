@@ -32,6 +32,10 @@ namespace PicurBackend.Infrastructure
                       .IsRequired()
                       .HasMaxLength(150);
 
+                entity.Property(u => u.Phone)
+                      .IsRequired()
+                      .HasMaxLength(15);
+
                 entity.Property(u => u.Password)
                       .IsRequired()
                       .HasMaxLength(255);
