@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using PicurBackend.Application.Dto;
 using PicurBackend.Application.Interfaces;
 using PicurBackend.Domain.Entities;
 using PicurBackend.Domain.Interfaces;
@@ -36,6 +37,14 @@ namespace PicurBackend.Api.Controllers
             return Ok(user);
         }
 
+        [HttpGet("/api/User/by-email/{email}")]
+        public async Task<IActionResult> GetUserByEmail(string email)
+        {
+            var user = await _userService.GetUserByEmail(email);
+
+            return user == null ? NotFound() : Ok(user);
+        }
+
         [HttpPost]
         public async Task<IActionResult> CreateUser(User user)
         {
@@ -55,10 +64,10 @@ namespace PicurBackend.Api.Controllers
             return Ok(updatedUser);
         }
 
-        [HttpPut("/update-password/{password}")]
-        public async Task<IActionResult> UpdatePassword(int id, string password)
+        [HttpPut("/api/User/update-password")]
+        public async Task<IActionResult> UpdatePassword([FromBody] UpdatePasswordRequestDto request)
         {
-            var updatedUser = await _userService.UpdatePassword(id, password);
+            var updatedUser = await _userService.UpdatePassword(request.Id, request.Password);
 
             if (updatedUser == null)
                 return NotFound();

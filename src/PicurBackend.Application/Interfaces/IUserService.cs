@@ -8,5 +8,6 @@ namespace PicurBackend.Application.Interfaces
         Task<UserDto> CreateAsync(User user);
         Task<UserDto> UpdatePassword(int id, string password);
         Task<bool> LoginAsync(LoginRequestDto request);
+        Task<UserDto?> GetUserByEmail(string email); 
     }
 }

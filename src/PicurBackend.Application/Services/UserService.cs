@@ -4,6 +4,7 @@ using PicurBackend.Application.Dto;
 using PicurBackend.Application.Interfaces;
 using PicurBackend.Domain.Entities;
 using PicurBackend.Domain.Interfaces;
+using Twilio.Http;
 
 namespace PicurBackend.Application.Services
 {
@@ -27,6 +28,18 @@ namespace PicurBackend.Application.Services
             UserDto dto = user.Adapt<UserDto>();
 
             return dto;
+        }
+
+        public async Task<UserDto?> GetUserByEmail(string email)
+        {
+            var user = await _userRepository.GetByEmailAsync(email);
+
+            if (user == null)
+            {
+                throw new Exception("User not found");
+            }
+
+            return user.Adapt<UserDto>();
         }
 
         public async Task<bool> LoginAsync(LoginRequestDto request)

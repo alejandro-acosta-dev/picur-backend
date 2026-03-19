@@ -9,9 +9,9 @@ namespace PicurBackend.Api.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly UserService _userService;
+        private readonly IUserService _userService;
 
-        public AuthController(UserService userService)
+        public AuthController(IUserService userService)
         {
             _userService = userService;
         }
@@ -22,7 +22,7 @@ namespace PicurBackend.Api.Controllers
         {
             var result = await _userService.LoginAsync(dto);
 
-            return result ? Ok(result) : BadRequest();            
+            return result ? Ok() : BadRequest();            
         }
     }
 }

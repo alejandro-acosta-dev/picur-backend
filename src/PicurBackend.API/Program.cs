@@ -7,40 +7,48 @@ using PicurBackend.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// DB Context
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-
-// Add services to the container.
+// Repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IReadingRepository, ReadingRepository>();
 
-
-//Services
+// Services
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<NotificationService>();
-
-
 builder.Services.AddScoped<OpenAIService>();
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        policy => policy
+            .AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader());
+});
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Swagger
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// Aplicar CORS
+app.UseCors("AllowAll");
 
+// Autorización
 app.UseAuthorization();
 
+// Map Controllers
 app.MapControllers();
 
 app.Run();
