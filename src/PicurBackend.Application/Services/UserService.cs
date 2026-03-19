@@ -1,10 +1,8 @@
-﻿
-using Mapster;
+﻿using Mapster;
 using PicurBackend.Application.Dto;
 using PicurBackend.Application.Interfaces;
 using PicurBackend.Domain.Entities;
 using PicurBackend.Domain.Interfaces;
-using Twilio.Http;
 
 namespace PicurBackend.Application.Services
 {
@@ -17,17 +15,25 @@ namespace PicurBackend.Application.Services
             _userRepository = userRepository;
         }
 
-        public async Task<UserDto> CreateAsync(User user)
+        public async Task<UserDto?> CreateAsync(User user)
         {
-            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(user.Password);
+            var existingUser = await _userRepository.GetByEmailAsync(user.Email);
 
-            user.Password = hashedPassword;
+            if (existingUser == null)
+            {
+                string hashedPassword = BCrypt.Net.BCrypt.HashPassword(user.Password);
 
-            var createdUser = await _userRepository.CreateAsync(user);
+                user.Password = hashedPassword;
 
-            UserDto dto = user.Adapt<UserDto>();
+                var createdUser = await _userRepository.CreateAsync(user);
 
-            return dto;
+                UserDto dto = user.Adapt<UserDto>();
+
+                return dto;
+            }
+            return null;
+
+            
         }
 
         public async Task<UserDto?> GetUserByEmail(string email)
@@ -42,6 +48,13 @@ namespace PicurBackend.Application.Services
             return user.Adapt<UserDto>();
         }
 
+        public async Task<IEnumerable<UserDto>> GetUsers()
+        {
+            var users = await _userRepository.GetAllAsync();
+
+            return users.Adapt<IEnumerable<UserDto>>();
+        }
+
         public async Task<bool> LoginAsync(LoginRequestDto request)
         {
             var user = await _userRepository.GetByEmailAsync(request.Email);
@@ -53,7 +66,6 @@ namespace PicurBackend.Application.Services
 
             return BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
         }
-
 
         public async Task<UserDto> UpdatePassword(int id, string password)
         {
@@ -74,7 +86,6 @@ namespace PicurBackend.Application.Services
             return dto;
 
         }
-
 
     }
 }

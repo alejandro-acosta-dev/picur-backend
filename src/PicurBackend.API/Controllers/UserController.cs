@@ -22,7 +22,7 @@ namespace PicurBackend.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> GetUsers()
         {
-            var users = await _userRepository.GetAllAsync();
+            var users = await _userService.GetUsers();
             return Ok(users);
         }
 
@@ -50,7 +50,7 @@ namespace PicurBackend.Api.Controllers
         {
             var createdUser = await _userService.CreateAsync(user);
 
-            return CreatedAtAction(nameof(GetUser), new { id = createdUser.Id }, createdUser);
+            return createdUser == null ? Conflict() : Ok(createdUser);
         }
 
         [HttpPut("{id}")]
