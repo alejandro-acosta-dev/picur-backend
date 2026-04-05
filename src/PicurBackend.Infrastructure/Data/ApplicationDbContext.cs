@@ -12,6 +12,7 @@ namespace PicurBackend.Infrastructure
 
         public DbSet<User> Users { get; set; }
         public DbSet<Reading> Readings { get; set; }
+        public DbSet<ChatMessageHistory> ChatMessageHistories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -60,6 +61,25 @@ namespace PicurBackend.Infrastructure
                       .IsRequired();
 
                 entity.Property(u => u.Door)
+                      .IsRequired();
+            });
+
+            modelBuilder.Entity<ChatMessageHistory>(entity =>
+            {
+                entity.ToTable("ChatMessagesHistory");
+
+                entity.HasKey(u => u.Id);
+
+                entity.Property(u => u.Id)
+                      .ValueGeneratedOnAdd();
+
+                entity.Property(u => u.Role)
+                      .IsRequired();
+
+                entity.Property(u => u.Content)
+                      .IsRequired();
+
+                entity.Property(u => u.CreatedAt)
                       .IsRequired();
             });
         }

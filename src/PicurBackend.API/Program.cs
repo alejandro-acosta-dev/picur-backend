@@ -14,6 +14,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IReadingRepository, ReadingRepository>();
+builder.Services.AddScoped<IChatMessageHistoryRepository, ChatMessageHistoryRepository>();
 
 // Services
 builder.Services.AddScoped<IUserService, UserService>();

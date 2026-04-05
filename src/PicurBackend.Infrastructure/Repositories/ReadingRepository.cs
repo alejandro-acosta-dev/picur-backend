@@ -15,7 +15,9 @@ namespace PicurBackend.Infrastructure.Repositories
 
         public async Task<IEnumerable<Reading>> GetAllAsync()
         {
-            return await _context.Readings.AsNoTracking().ToListAsync();
+            return await _context.Readings
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task<Reading?> GetByIdAsync(int id)
@@ -43,6 +45,47 @@ namespace PicurBackend.Infrastructure.Repositories
             await _context.SaveChangesAsync();
 
             return true;
+        }
+
+        public async Task<IEnumerable<Reading>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
+        {
+            return await _context.Readings
+               .Where(r => r.Timestamp >= startDate && r.Timestamp <= endDate)
+               .OrderBy(r => r.Timestamp)
+               .AsNoTracking()
+               .ToListAsync();
+        }
+
+        public async Task<double> GetAverageTemperatureAsync(DateTime start, DateTime end)
+        {
+            var avg = await _context.Readings
+                .Where(r => r.Timestamp >= start && r.Timestamp <= end)
+                .Select(r => (double?)r.Temperature)
+                .AverageAsync();
+
+            return avg ?? 0;
+        }
+
+        public async Task<IEnumerable<Reading>> GetDoorEventsAsync(DateTime start, DateTime end)
+        {
+            return await _context.Readings
+                .Where(r => r.Timestamp >= start &&
+                            r.Timestamp <= end &&
+                            r.Door == true)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Reading>> GetAnomaliesAsync(DateTime start, DateTime end)
+        {
+            return await _context.Readings
+                .Where(r =>
+                    r.Timestamp >= start &&
+                    r.Timestamp <= end &&
+                    (r.Temperature < 2 || r.Temperature > 8))
+                .OrderBy(r => r.Timestamp)
+                .AsNoTracking()
+                .ToListAsync();
         }
     }
 }
