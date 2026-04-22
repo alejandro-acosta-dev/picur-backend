@@ -20,6 +20,7 @@ builder.Services.AddScoped<IChatMessageHistoryRepository, ChatMessageHistoryRepo
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<OpenAIService>();
+builder.Services.AddScoped<IChatMessageHistoryService, ChatMessageHistoryService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
