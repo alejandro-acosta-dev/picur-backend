@@ -1,7 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using PicurBackend.Application.Dto;
 using PicurBackend.Application.Interfaces;
-using PicurBackend.Application.Services;
 
 namespace PicurBackend.Api.Controllers
 {
@@ -16,13 +15,15 @@ namespace PicurBackend.Api.Controllers
             _userService = userService;
         }
 
-
-        [HttpPost]
-        public async Task<IActionResult> Login(LoginRequestDto dto)
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequestDto dto)
         {
-            var result = await _userService.LoginAsync(dto);
+            var user = await _userService.LoginAsync(dto);
 
-            return result ? Ok() : BadRequest();            
+            if (user == null)
+                return Unauthorized(new { message = "Credenciales incorrectas." });
+
+            return Ok(user);
         }
     }
 }

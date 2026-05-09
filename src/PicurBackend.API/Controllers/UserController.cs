@@ -1,8 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using PicurBackend.Application.Dto;
 using PicurBackend.Application.Interfaces;
-using PicurBackend.Domain.Entities;
-using PicurBackend.Domain.Interfaces;
 
 namespace PicurBackend.Api.Controllers
 {
@@ -10,12 +8,10 @@ namespace PicurBackend.Api.Controllers
     [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
-        private readonly IUserRepository _userRepository;
         private readonly IUserService _userService;
 
-        public UserController(IUserRepository userRepository, IUserService userService)
+        public UserController(IUserService userService)
         {
-            _userRepository = userRepository;
             _userService = userService;
         }
 
@@ -29,64 +25,43 @@ namespace PicurBackend.Api.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetUser(int id)
         {
-            var user = await _userRepository.GetByIdAsync(id);
-
-            if (user == null)
-                return NotFound();
-
+            var user = await _userService.GetByIdAsync(id);
             return Ok(user);
         }
 
-        [HttpGet("/api/User/by-email/{email}")]
+        [HttpGet("by-email/{email}")]
         public async Task<IActionResult> GetUserByEmail(string email)
         {
             var user = await _userService.GetUserByEmail(email);
-
-            return user == null ? NotFound() : Ok(user);
+            return Ok(user);
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateUser(User user)
+        public async Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
         {
-            var createdUser = await _userService.CreateAsync(user);
-
-            return createdUser == null ? Conflict() : Ok(createdUser);
+            var createdUser = await _userService.CreateAsync(dto);
+            return CreatedAtAction(nameof(GetUser), new { id = createdUser.Id }, createdUser);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id, User user)
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserDto dto)
         {
-            var updatedUser = await _userRepository.UpdateAsync(id, user);
-
-            if (updatedUser == null)
-                return NotFound();
-
+            var updatedUser = await _userService.UpdateAsync(id, dto);
             return Ok(updatedUser);
         }
 
-        [HttpPut("/api/User/update-password")]
+        [HttpPut("update-password")]
         public async Task<IActionResult> UpdatePassword([FromBody] UpdatePasswordRequestDto request)
         {
             var updatedUser = await _userService.UpdatePassword(request.Id, request.Password);
-
-            if (updatedUser == null)
-                return NotFound();
-
             return Ok(updatedUser);
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
-            var deleted = await _userRepository.DeleteAsync(id);
-
-            if (!deleted)
-                return NotFound();
-
+            await _userService.DeleteAsync(id);
             return NoContent();
         }
-
-
-
     }
 }

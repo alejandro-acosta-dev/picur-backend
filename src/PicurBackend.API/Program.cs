@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PicurBackend.API.Middleware;
 using PicurBackend.Application.Interfaces;
 using PicurBackend.Application.Services;
 using PicurBackend.Domain.Interfaces;
@@ -18,8 +19,9 @@ builder.Services.AddScoped<IChatMessageHistoryRepository, ChatMessageHistoryRepo
 
 // Services
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<NotificationService>();
-builder.Services.AddScoped<OpenAIService>();
+builder.Services.AddScoped<IReadingService, ReadingService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IOpenAIService, OpenAIService>();
 builder.Services.AddScoped<IChatMessageHistoryService, ChatMessageHistoryService>();
 
 builder.Services.AddControllers();
@@ -37,20 +39,18 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Swagger
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// Aplicar CORS
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 app.UseCors("AllowAll");
 
-// Autorización
 app.UseAuthorization();
 
-// Map Controllers
 app.MapControllers();
 
 app.Run();

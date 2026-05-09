@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using PicurBackend.Application.Interfaces;
 
 namespace PicurBackend.Api.Controllers
@@ -15,17 +15,17 @@ namespace PicurBackend.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetUsers()
+        public async Task<IActionResult> GetHistory()
         {
-            var chats = await _chatMessageHistoryService.GetHistory();
-            return Ok(chats);
+            var history = await _chatMessageHistoryService.GetHistory();
+            return Ok(history);
         }
 
         [HttpDelete]
         public async Task<IActionResult> CleanHistory()
         {
             await _chatMessageHistoryService.CleanHistory();
-            return Ok();
+            return NoContent();
         }
     }
 }

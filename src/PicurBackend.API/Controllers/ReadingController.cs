@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
+using PicurBackend.Application.Interfaces;
 using PicurBackend.Domain.Entities;
-using PicurBackend.Domain.Interfaces;
 
 namespace PicurBackend.Api.Controllers
 {
@@ -8,47 +8,38 @@ namespace PicurBackend.Api.Controllers
     [Route("api/[controller]")]
     public class ReadingController : ControllerBase
     {
-        private readonly IReadingRepository _readingRepository;
+        private readonly IReadingService _readingService;
 
-        public ReadingController(IReadingRepository readingRepository)
+        public ReadingController(IReadingService readingService)
         {
-            _readingRepository = readingRepository;
+            _readingService = readingService;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetReadings()
         {
-            var readings = await _readingRepository.GetAllAsync();
+            var readings = await _readingService.GetAllAsync();
             return Ok(readings);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetReading(int id)
         {
-            var user = await _readingRepository.GetByIdAsync(id);
-
-            if (user == null)
-                return NotFound();
-
-            return Ok(user);
+            var reading = await _readingService.GetByIdAsync(id);
+            return Ok(reading);
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateUser(Reading reading)
+        public async Task<IActionResult> CreateReading([FromBody] Reading reading)
         {
-            var createdReading = await _readingRepository.CreateAsync(reading);
-
+            var createdReading = await _readingService.CreateAsync(reading);
             return CreatedAtAction(nameof(GetReading), new { id = createdReading.Id }, createdReading);
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUser(int id)
+        public async Task<IActionResult> DeleteReading(int id)
         {
-            var deleted = await _readingRepository.DeleteAsync(id);
-
-            if (!deleted)
-                return NotFound();
-
+            await _readingService.DeleteAsync(id);
             return NoContent();
         }
     }

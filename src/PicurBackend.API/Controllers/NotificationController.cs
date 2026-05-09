@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using PicurBackend.Application.Services;
+using Microsoft.AspNetCore.Mvc;
+using PicurBackend.Application.Interfaces;
 
 namespace PicurBackend.Api.Controllers
 {
@@ -7,24 +7,18 @@ namespace PicurBackend.Api.Controllers
     [Route("api/[controller]")]
     public class NotificationController : ControllerBase
     {
-        private readonly NotificationService _notificationService;
+        private readonly INotificationService _notificationService;
 
-        public NotificationController(NotificationService notificationService)
+        public NotificationController(INotificationService notificationService)
         {
             _notificationService = notificationService;
         }
 
-
         [HttpPost("send")]
         public async Task<IActionResult> SendSms()
         {
-            var code = await _notificationService.SendSmsAsync();
-
-            return Ok(new
-            {
-                Message = "Código enviado correctamente, por favor ingresarlo para recuperar su contraseña",
-                code
-            });
+            await _notificationService.SendSmsAsync();
+            return Ok(new { message = "Código enviado correctamente. Por favor ingrésalo para recuperar tu contraseña." });
         }
     }
 }

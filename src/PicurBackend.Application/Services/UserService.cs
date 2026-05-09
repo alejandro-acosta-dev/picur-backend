@@ -1,4 +1,5 @@
-﻿using Mapster;
+using Mapster;
+using PicurBackend.Application.Common.Exceptions;
 using PicurBackend.Application.Dto;
 using PicurBackend.Application.Interfaces;
 using PicurBackend.Domain.Entities;
@@ -15,77 +16,81 @@ namespace PicurBackend.Application.Services
             _userRepository = userRepository;
         }
 
-        public async Task<UserDto?> CreateAsync(User user)
+        public async Task<IEnumerable<UserDto>> GetUsers()
         {
-            var existingUser = await _userRepository.GetByEmailAsync(user.Email);
+            var users = await _userRepository.GetAllAsync();
+            return users.Adapt<IEnumerable<UserDto>>();
+        }
 
-            if (existingUser == null)
-            {
-                string hashedPassword = BCrypt.Net.BCrypt.HashPassword(user.Password);
-
-                user.Password = hashedPassword;
-
-                var createdUser = await _userRepository.CreateAsync(user);
-
-                UserDto dto = user.Adapt<UserDto>();
-
-                return dto;
-            }
-            return null;
-
-            
+        public async Task<UserDto> GetByIdAsync(int id)
+        {
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null) throw new NotFoundException("Usuario", id);
+            return user.Adapt<UserDto>();
         }
 
         public async Task<UserDto?> GetUserByEmail(string email)
         {
             var user = await _userRepository.GetByEmailAsync(email);
-
-            if (user == null)
-            {
-                throw new Exception("User not found");
-            }
-
+            if (user == null) throw new NotFoundException("Usuario", email);
             return user.Adapt<UserDto>();
         }
 
-        public async Task<IEnumerable<UserDto>> GetUsers()
+        public async Task<UserDto> CreateAsync(CreateUserDto dto)
         {
-            var users = await _userRepository.GetAllAsync();
+            var existingUser = await _userRepository.GetByEmailAsync(dto.Email);
+            if (existingUser != null)
+                throw new ConflictException($"Ya existe un usuario con el email '{dto.Email}'.");
 
-            return users.Adapt<IEnumerable<UserDto>>();
+            var user = dto.Adapt<User>();
+            user.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+
+            await _userRepository.CreateAsync(user);
+            return user.Adapt<UserDto>();
         }
 
-        public async Task<bool> LoginAsync(LoginRequestDto request)
+        public async Task<UserDto> UpdateAsync(int id, UpdateUserDto dto)
         {
-            var user = await _userRepository.GetByEmailAsync(request.Email);
+            var existingUser = await _userRepository.GetByIdAsync(id);
+            if (existingUser == null)
+                throw new NotFoundException("Usuario", id);
 
-            if (user == null)
-            {
-                throw new Exception("User not found");
-            }
+            existingUser.Name = dto.Name;
+            existingUser.Email = dto.Email;
+            existingUser.Phone = dto.Phone;
 
-            return BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
+            var updatedUser = await _userRepository.UpdateAsync(id, existingUser);
+            return updatedUser!.Adapt<UserDto>();
         }
 
         public async Task<UserDto> UpdatePassword(int id, string password)
         {
             var user = await _userRepository.GetByIdAsync(id);
-
             if (user == null)
-            {
-                throw new Exception("User not found");
-            }
+                throw new NotFoundException("Usuario", id);
 
-            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(password);
-
-            user.Password = hashedPassword;
-
+            user.Password = BCrypt.Net.BCrypt.HashPassword(password);
             var updatedUser = await _userRepository.UpdateAsync(id, user);
-
-            UserDto dto = updatedUser.Adapt<UserDto>();
-            return dto;
-
+            return updatedUser!.Adapt<UserDto>();
         }
 
+        public async Task<UserDto?> LoginAsync(LoginRequestDto request)
+        {
+            var user = await _userRepository.GetByEmailAsync(request.Email);
+            if (user == null)
+                throw new NotFoundException($"No existe un usuario con el email '{request.Email}'.");
+
+            if (!BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
+                return null;
+
+            return user.Adapt<UserDto>();
+        }
+
+        public async Task DeleteAsync(int id)
+        {
+            var deleted = await _userRepository.DeleteAsync(id);
+            if (!deleted)
+                throw new NotFoundException("Usuario", id);
+        }
     }
 }

@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using PicurBackend.Application.Services;
+using Microsoft.AspNetCore.Mvc;
+using PicurBackend.Application.Interfaces;
 
 namespace PicurBackend.Api.Controllers
 {
@@ -7,20 +7,18 @@ namespace PicurBackend.Api.Controllers
     [Route("api/[controller]")]
     public class OpenAIController : ControllerBase
     {
-        private readonly OpenAIService _aiService;
+        private readonly IOpenAIService _aiService;
 
-        public OpenAIController( OpenAIService aiService)
+        public OpenAIController(IOpenAIService aiService)
         {
             _aiService = aiService;
         }
-
 
         [HttpPost]
         public async Task<IActionResult> AskAI([FromBody] string prompt)
         {
             var result = await _aiService.AskAI(prompt);
-
-            return Ok(result);
+            return Ok(new { response = result });
         }
     }
 }
