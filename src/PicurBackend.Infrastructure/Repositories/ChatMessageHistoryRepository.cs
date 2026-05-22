@@ -26,7 +26,12 @@ namespace PicurBackend.Infrastructure.Repositories
 
         public async Task<List<ChatMessageHistory>> GetHistoryAsync()
         {
-            return await _context.ChatMessageHistories.AsNoTracking().Take(10).ToListAsync();
+            return await _context.ChatMessageHistories
+                .AsNoTracking()
+                .OrderByDescending(x => x.CreatedAt)
+                .Take(10)
+                .OrderBy(x => x.CreatedAt)
+                .ToListAsync();
         }
 
         public async Task SaveMessageAsync(ChatMessageHistory message)

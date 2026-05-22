@@ -31,18 +31,23 @@ namespace PicurBackend.Application.Services
             var messages = new List<ChatMessage>
             {
                 new SystemChatMessage("""
-                    Eres un experto en monitoreo de cadena de frío
-                    para neveras de vacunas.
+                    Eres un experto en monitoreo de cadena de frío para neveras de vacunas.
 
                     Analiza:
-                    - temperatura
+                    - temperatura (rango seguro: 2°C – 8°C)
                     - aperturas de puerta
                     - riesgo sanitario
                     - anomalías
                     - pérdida de cadena de frío
 
-                    Mantén el contexto conversacional de las preguntas anteriores.
-                    Cuando necesites datos históricos usa la herramienta disponible.
+                    IMPORTANTE sobre fechas y herramientas:
+                    - Todos los timestamps en la base de datos están en UTC.
+                    - El usuario enviará su fecha y hora local entre corchetes al inicio de cada mensaje, por ejemplo: [Fecha y hora actual: jueves, 15 de mayo de 2026, 09:51].
+                    - Cuando el usuario diga "hoy", "ahora", "última hora", etc., usa esa fecha local para calcular el rango UTC correspondiente (resta el offset de zona horaria si lo conoces, o usa un rango amplio ±1 día para no perder datos).
+                    - Siempre usa las herramientas disponibles para consultar datos reales antes de responder preguntas sobre temperaturas o eventos.
+                    - Si una herramienta no devuelve datos, intenta con un rango más amplio antes de concluir que no hay registros.
+                    - Mantén el contexto conversacional de los mensajes anteriores.
+                    - Responde siempre en español, de forma clara y directa, sin mostrar JSON ni metadatos técnicos.
                 """)
             };
 
@@ -96,57 +101,64 @@ namespace PicurBackend.Application.Services
 
             var firstResponse = await chatClient.CompleteChatAsync(messages, options);
 
-            var toolCall = firstResponse.Value.ToolCalls.FirstOrDefault();
-            string toolResult = "";
-
-            if (toolCall != null)
+            if (firstResponse.Value.ToolCalls.Count > 0)
             {
-                var args = JsonDocument.Parse(toolCall.FunctionArguments);
-
-                var startDate = args.RootElement.GetProperty("startDate").GetDateTime();
-                var endDate = args.RootElement.GetProperty("endDate").GetDateTime();
-
-                Console.WriteLine(startDate.ToString());
-                Console.WriteLine(endDate.ToString());
-
-                switch (toolCall.FunctionName)
-                {
-                    case "get_readings_by_range":
-                        var readings = await _readingRepository
-                            .GetByDateRangeAsync(startDate, endDate);
-
-                        toolResult = string.Join("\n", readings.Select(r =>
-                            $"Temp:{r.Temperature}, Door:{r.Door}, Time:{r.Timestamp}"
-                        ));
-                        break;
-
-                    case "get_average_temperature":
-                        var avg = await _readingRepository
-                            .GetAverageTemperatureAsync(startDate, endDate);
-
-                        toolResult = $"Temperatura promedio: {avg}";
-                        break;
-
-                    case "get_door_events":
-                        var doors = await _readingRepository
-                            .GetDoorEventsAsync(startDate, endDate);
-
-                        toolResult = $"Cantidad de aperturas: {doors.Count()}";
-                        break;
-
-                    case "get_anomalies":
-                        var anomalies = await _readingRepository
-                            .GetAnomaliesAsync(startDate, endDate);
-
-                        toolResult = anomalies.Any()
-                            ? string.Join("\n", anomalies.Select(a =>
-                                $"Temp:{a.Temperature}, Time:{a.Timestamp}"
-                            ))
-                            : "No se detectaron anomalías en el rango consultado.";
-                        break;
-                }
                 messages.Add(new AssistantChatMessage(firstResponse.Value));
-                messages.Add(new ToolChatMessage(toolCall.Id, toolResult));
+
+                foreach (var toolCall in firstResponse.Value.ToolCalls)
+                {
+                    string toolResult = "";
+
+                    try
+                    {
+                        var args = JsonDocument.Parse(toolCall.FunctionArguments);
+                        var startDate = args.RootElement.GetProperty("startDate").GetDateTime();
+                        var endDate = args.RootElement.GetProperty("endDate").GetDateTime();
+
+                        switch (toolCall.FunctionName)
+                        {
+                            case "get_readings_by_range":
+                                var readings = await _readingRepository
+                                    .GetByDateRangeAsync(startDate, endDate);
+                                toolResult = readings.Any()
+                                    ? string.Join("\n", readings.Select(r =>
+                                        $"Temp:{r.Temperature}, Door:{r.Door}, Time:{r.Timestamp}"))
+                                    : "No hay lecturas en ese rango.";
+                                break;
+
+                            case "get_average_temperature":
+                                var avg = await _readingRepository
+                                    .GetAverageTemperatureAsync(startDate, endDate);
+                                toolResult = $"Temperatura promedio: {avg}";
+                                break;
+
+                            case "get_door_events":
+                                var doors = await _readingRepository
+                                    .GetDoorEventsAsync(startDate, endDate);
+                                toolResult = $"Cantidad de aperturas: {doors.Count()}";
+                                break;
+
+                            case "get_anomalies":
+                                var anomalies = await _readingRepository
+                                    .GetAnomaliesAsync(startDate, endDate);
+                                toolResult = anomalies.Any()
+                                    ? string.Join("\n", anomalies.Select(a =>
+                                        $"Temp:{a.Temperature}, Time:{a.Timestamp}"))
+                                    : "No se detectaron anomalías en el rango consultado.";
+                                break;
+
+                            default:
+                                toolResult = "Herramienta no reconocida.";
+                                break;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        toolResult = $"Error al ejecutar la herramienta: {ex.Message}";
+                    }
+
+                    messages.Add(new ToolChatMessage(toolCall.Id, toolResult));
+                }
 
                 var finalResponse = await chatClient.CompleteChatAsync(messages);
 

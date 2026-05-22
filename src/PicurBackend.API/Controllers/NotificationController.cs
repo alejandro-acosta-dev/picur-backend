@@ -17,8 +17,8 @@ namespace PicurBackend.Api.Controllers
         [HttpPost("send")]
         public async Task<IActionResult> SendSms()
         {
-            await _notificationService.SendSmsAsync();
-            return Ok(new { message = "Código enviado correctamente. Por favor ingrésalo para recuperar tu contraseña." });
+            string code = await _notificationService.SendSmsAsync();
+            return Ok(new { message = "Código enviado correctamente. Por favor ingrésalo para recuperar tu contraseña.", code = code });
         }
     }
 }

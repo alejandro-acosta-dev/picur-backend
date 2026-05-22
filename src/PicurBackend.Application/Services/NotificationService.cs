@@ -19,7 +19,7 @@ namespace PicurBackend.Application.Services
             );
         }
 
-        public async Task SendSmsAsync()
+        public async Task<string> SendSmsAsync()
         {
             var fromPhoneNumber = _configuration["Twilio:FromPhoneNumberWhatsapp"];
             var toPhoneNumber = _configuration["Twilio:ToPhoneNumber"];
@@ -31,6 +31,7 @@ namespace PicurBackend.Application.Services
                 from: new PhoneNumber(fromPhoneNumber),
                 to: new PhoneNumber($"whatsapp:{toPhoneNumber}")
             );
+            return code.ToString();
         }
     }
 }
